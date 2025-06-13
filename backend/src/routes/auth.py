@@ -16,12 +16,12 @@ from lib.jwt import create_token, verify_token
 
 router = APIRouter()
 
-@router.get('/users')
+@router.get('/auth/users')
 async def get_users():
     return {"message":'user api'}
 
 #signup
-@router.post('/signup', response_model=UserSignupSerializer )
+@router.post('/auth/signup', response_model=UserSignupSerializer )
 async def signup(req : UserSignupSerializer):
     if len(req.password) < 8:
         return JSONResponse({"error":"Password is less than 8 characters."}, status_code=status.HTTP_400_BAD_REQUEST)
@@ -48,7 +48,7 @@ async def signup(req : UserSignupSerializer):
     return JSONResponse({'error':'Internal Error'}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 #login
-@router.post('/login', response_model=UserGetSerializer)
+@router.post('/auth/login', response_model=UserGetSerializer)
 async def login(req: UserLoginSerializer):
     with Session(engine) as session:
         statement = select(User).where(User.email == req.email)
@@ -66,14 +66,14 @@ async def login(req: UserLoginSerializer):
     return JSONResponse({'error':'Internal Error'}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 #logout
-@router.post('/logout', )
+@router.post('/auth/logout', )
 async def logout():
     res = JSONResponse({'message':'Logged out'}, status_code=status.HTTP_200_OK)
     res.set_cookie(key='jwt', value='', max_age=0)
     return res
 
 #check - check if user is logged in or not
-@router.post('/check', response_model=UserGetSerializer)
+@router.post('/auth/check', response_model=UserGetSerializer)
 async def check_auth(req: Request):
     token = req.cookies.get('jwt')
     if not token:
