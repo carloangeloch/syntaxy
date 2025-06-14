@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { lazy, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { userAuthStore } from "./store/authStore";
@@ -20,14 +20,35 @@ const App = () => {
     <>
       <Header />
       <Routes>
-        <Route path="/" element={authUser ? <HomePage /> : <LoginPage />} />
+        <Route
+          path="/"
+          element={
+            Object.keys(authUser).length !== 0 ? (
+              <HomePage />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
         <Route
           path="/signup"
-          element={authUser ? <HomePage /> : <SignupPage />}
+          element={
+            Object.keys(authUser).length !== 0 ? (
+              <Navigate to="/" />
+            ) : (
+              <SignupPage />
+            )
+          }
         />
         <Route
           path="/login"
-          element={authUser ? <HomePage /> : <LoginPage />}
+          element={
+            Object.keys(authUser).length !== 0 ? (
+              <Navigate to="/" />
+            ) : (
+              <LoginPage />
+            )
+          }
         />
         <Route path="/*" element={<Page404 />} />
       </Routes>

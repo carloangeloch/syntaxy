@@ -1,9 +1,14 @@
+import { useNavigate } from "react-router-dom";
+import { userAuthStore } from "../store/authStore";
+
 const Header = () => {
+  const { logout } = userAuthStore();
+  const navigate = useNavigate();
   return (
-    <>
-      <div className="w-full h-12 flex flex-row items-center justify-between px-3">
+    <div className="w-full relative">
+      <div className="w-full h-12 absolute flex flex-row items-center justify-between px-3">
         <div className="text-white">
-          <button className="btn btn-ghost">
+          <button className="btn btn-ghost" onClick={() => navigate("/")}>
             <strong>SYNTAXY</strong>
           </button>
         </div>
@@ -29,14 +34,24 @@ const Header = () => {
           id="desktop-menu"
           className="h-full hidden md:flex flex-row items-center gap-2"
         >
-          <button className="btn btn-ghost">Login</button>
+          <button className="btn btn-ghost" onClick={() => navigate("/login")}>
+            Login
+          </button>
           <button className="btn btn-ghost">About</button>
           <button className="btn btn-ghost">Contact</button>
           <button className="btn btn-ghost">Setting</button>
-          <button className="btn btn-ghost">Logout</button>
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              logout();
+              navigate("/");
+            }}
+          >
+            Logout
+          </button>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

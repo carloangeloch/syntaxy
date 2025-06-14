@@ -31,10 +31,21 @@ export const userAuthStore = create<AuthStore>((set) => ({
       set({ isCheckingAuth: false });
     }
   },
-  signup: async (data: object) => {
+  signup: async (data: { email: string; password: string }) => {
     set({ isSigningUp: true });
     try {
-      const res = await axiosInstance.post("/auth/signup", data);
+      const res = await axiosInstance.post("/auth/signup", {
+        email: data.email,
+        password: data.password,
+        created_date: new Date()
+          .toISOString()
+          .replace("T", " ")
+          .replace("Z", ""),
+        updated_date: new Date()
+          .toISOString()
+          .replace("T", " ")
+          .replace("Z", ""),
+      });
       console.log(res.data);
       set({ authUser: res.data });
     } catch (error) {
