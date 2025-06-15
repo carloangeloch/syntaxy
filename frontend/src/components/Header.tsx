@@ -37,7 +37,12 @@ const Header = () => {
           <button className="btn btn-ghost" onClick={() => navigate("/login")}>
             Login
           </button>
-          <button className="btn btn-ghost">About</button>
+          <button
+            className="btn btn-ghost"
+            onClick={() => navigate("/profile")}
+          >
+            Profile
+          </button>
           <button className="btn btn-ghost">Contact</button>
           <button className="btn btn-ghost">Setting</button>
           <button

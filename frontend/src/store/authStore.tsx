@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
+import axios, { AxiosError } from "axios";
 
 interface AuthStore {
   authUser: object;
@@ -22,8 +23,9 @@ export const userAuthStore = create<AuthStore>((set) => ({
   isCheckingAuth: true,
   checkAuth: async () => {
     try {
-      const res = await axiosInstance.get("/auth/check");
+      const res = await axiosInstance.post("/auth/check");
       set({ authUser: res.data });
+      console.log(res.data);
     } catch (error) {
       console.log("Error on checkAuth", error);
       set({ authUser: {} });
@@ -31,20 +33,18 @@ export const userAuthStore = create<AuthStore>((set) => ({
       set({ isCheckingAuth: false });
     }
   },
-  signup: async (data: { email: string; password: string }) => {
+  signup: async (data: {
+    email: string;
+    password: string;
+    username: string;
+  }) => {
     set({ isSigningUp: true });
+    console.log(data);
     try {
       const res = await axiosInstance.post("/auth/signup", {
         email: data.email,
         password: data.password,
-        created_date: new Date()
-          .toISOString()
-          .replace("T", " ")
-          .replace("Z", ""),
-        updated_date: new Date()
-          .toISOString()
-          .replace("T", " ")
-          .replace("Z", ""),
+        username: data.username,
       });
       console.log(res.data);
       set({ authUser: res.data });
@@ -62,8 +62,17 @@ export const userAuthStore = create<AuthStore>((set) => ({
       console.log(res.data);
       set({ authUser: res.data });
     } catch (error) {
-      console.error(error);
-      toast.error("Error upon signing up. Please try again later.");
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        if (axiosError.response?.status === 401) {
+          toast.error("Invalid Credentials");
+        } else {
+          console.error("Request error:", AxiosError);
+          toast.error("Error upon signing up. Please try again later.");
+        }
+      } else {
+        console.log("An unexpected error occured:", error);
+      }
     } finally {
       set({ isLoggingIn: false });
     }

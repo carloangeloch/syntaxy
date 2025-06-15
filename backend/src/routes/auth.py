@@ -11,7 +11,7 @@ from lib.db import engine
 import bcrypt
 import json
 from datetime import datetime
-from lib.jwt import create_token, verify_token
+from lib.jwt import create_token, verify_token, refreshing_token
 
 
 router = APIRouter()
@@ -36,13 +36,21 @@ async def signup(req : UserSignupSerializer):
             email = req.email,
             password = hashedPassword.decode('utf-8'),
             created_date=datetime.now(),
-            updated_date=datetime.now()
+            updated_date=datetime.now(),
+            user_type='user',
+            username=req.username,
+            first_name=None,
+            middle_name=None,
+            last_name=None,
+            avatar_url=None
         )
         session.add(user)
         session.commit()
         user_json = json.loads(UserGetSerializer.model_validate(user).model_dump_json())
         res = JSONResponse(user_json, status_code=status.HTTP_201_CREATED)
-        res.set_cookie(key='jwt', value=create_token(user_json), httponly=True, secure=True, samesite='strict', max_age= 7 * 24 * 60 * 60 )
+        access_token, refresh_token = create_token(user_json)
+        res.set_cookie(key='jwt_access', value=access_token, httponly=True, secure=True, samesite='Strict', max_age= 7 * 24 * 60 * 60 )
+        res.set_cookie(key='jwt_refresh', value=refresh_token, httponly=True, secure=True, samesite='Strict', max_age= 15* 60 )
         session.refresh(user)
         return res
     return JSONResponse({'error':'Internal Error'}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -60,8 +68,9 @@ async def login(req: UserLoginSerializer):
             return JSONResponse({"Error":"Invalid Credentials"}, status_code=status.HTTP_401_UNAUTHORIZED)
         user_json = json.loads(UserGetSerializer.model_validate(user).model_dump_json())
         res = JSONResponse(user_json, status_code=status.HTTP_200_OK)
-        token = create_token(user_json)
-        res.set_cookie(key='jwt', value=token.decode('utf-8') , httponly=True, secure=True, samesite='strict', max_age= 7 * 24 * 60 * 60 )
+        access_token, refresh_token = create_token(user_json)
+        res.set_cookie(key='jwt_access', value=access_token, httponly=True, secure=True, samesite='Strict', max_age= 15*60)
+        res.set_cookie(key='jwt_refresh', value=refresh_token, httponly=True, secure=True, samesite='Strict', max_age=7 * 24 * 60 * 60)
         return res
     return JSONResponse({'error':'Internal Error'}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -69,24 +78,26 @@ async def login(req: UserLoginSerializer):
 @router.post('/auth/logout', )
 async def logout():
     res = JSONResponse({'message':'Logged out'}, status_code=status.HTTP_200_OK)
-    res.set_cookie(key='jwt', value='', max_age=0)
+    res.delete_cookie('jwt_refresh')
+    res.delete_cookie('jwt_access')
     return res
 
 #check - check if user is logged in or not
 @router.post('/auth/check', response_model=UserGetSerializer)
 async def check_auth(req: Request):
-    token = req.cookies.get('jwt')
-    if not token:
-        return JSONResponse({"Error": "Authorization Error - No token found."}, status_code=status.HTTP_401_UNAUTHORIZED)
-    with Session(engine) as session:
-        decoded = verify_token(token.encode('utf-8'))
-        statement = select(User).where(User.email == decoded.get('email'))
-        user = session.exec(statement).first()
-        if not user:
-            return JSONResponse({"Error": "Authorization Error - No token found."}, status_code=status.HTTP_401_UNAUTHORIZED)
-        user_json = json.loads(UserGetSerializer.model_validate(user).model_dump_json())
-        res = JSONResponse(user_json, status_code=status.HTTP_200_OK)
-        token = create_token(user_json)
-        res.set_cookie(key='jwt', value=token.decode('utf-8'), httponly=True, secure=True, samesite='strict', max_age= 7 * 24 * 60 * 60 )
-        return res
-    return JSONResponse({'error':'Internal Error'}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    try:
+        payload = verify_token(req, JSONResponse)
+        with Session(engine) as session:
+            statement = select(User).where(User.email == payload.get('email'))
+            user = session.exec(statement).first()
+            if not user:
+                return JSONResponse({"Error": "Authorization Error - Invalid token."}, status_code=status.HTTP_401_UNAUTHORIZED)
+            user_json = json.loads(UserGetSerializer.model_validate(user).model_dump_json())
+            res = JSONResponse(user_json, status_code=status.HTTP_200_OK)
+            access_token, refresh_token = create_token(user_json)
+            res.set_cookie(key='jwt_access', value=access_token, httponly=True, secure=True, samesite='Strict', max_age= 15 * 60 )
+            res.set_cookie(key='jwt_refresh', value=refresh_token, httponly=True, secure=True, samesite='Strict', max_age=  7 * 24 * 60 * 60 )
+            return res
+        return JSONResponse({'error':'Internal Error'}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except:
+        return JSONResponse({'error':'Internal Error'}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

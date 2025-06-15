@@ -1,16 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Input from "../components/Input";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { userAuthStore } from "../store/authStore";
+import { useNavigate } from "react-router-dom";
 
 const SingupPage = () => {
   const defaultUserData = {
     email: "",
+    username: "",
     password1: "",
     password2: "",
   };
-  const { signup, isSigningUp } = userAuthStore();
+  const { signup, isSigningUp, authUser } = userAuthStore();
   const [userData, setUserData] = useState(defaultUserData);
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -27,18 +29,27 @@ const SingupPage = () => {
       if (userData.password1 != userData.password2)
         toast.error("Password do not match");
       if (validEmail && userData.password1 === userData.password2) {
-        signup({ email: userData.email, password: userData.password1 });
+        signup({
+          email: userData.email,
+          password: userData.password1,
+          username: userData.username,
+        });
         setUserData(defaultUserData);
       }
     } catch (error) {
       console.log(error);
     }
   };
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (Object.keys(authUser).length !== 0) navigate("/");
+  }, [authUser, navigate]);
 
   return (
     <div
       id="signup"
-      className="w-full h-screen flex flex-col items-center justify-center pt-12 px-5"
+      className="w-full min-h-full flex flex-col items-center justify-center px-5"
     >
       <div
         id="signup-card"
@@ -55,9 +66,16 @@ const SingupPage = () => {
           <form className="flex flex-col gap-y-8">
             <Input
               text="Email Address"
-              name="emai"
+              name="email"
               onchange={(e) =>
                 setUserData((u) => ({ ...u, email: e.target.value }))
+              }
+            />
+            <Input
+              text="Username"
+              name="username"
+              onchange={(e) =>
+                setUserData((u) => ({ ...u, username: e.target.value }))
               }
             />
             <Input

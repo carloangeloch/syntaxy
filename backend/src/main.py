@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from lib.db import engine, create_db_and_tables
 from contextlib import asynccontextmanager
-from routes import auth
+from routes import auth, post
 from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
@@ -28,3 +28,4 @@ async def home():
     return {'message':"Welcome"}
 
 app.include_router(auth.router, prefix='/api', tags=['auth'])
+app.include_router(post.router, prefix='/api', tags=['post'])

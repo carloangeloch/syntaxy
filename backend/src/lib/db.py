@@ -15,6 +15,6 @@ print('Server Running . . . ')
 def create_db_and_tables():
     #migrate all tables
     SQLModel.metadata.create_all(engine)
-    print('User model migrated . . .')
+    print('models migrated . . .')
 
 

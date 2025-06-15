@@ -10,7 +10,7 @@ const Input = ({ text, name, onchange }: InputProps) => {
         type="email"
         name={name}
         id={name}
-        placeholder="Email Address"
+        placeholder={name}
         className="peer w-full h-10 focus:outline-none border-b-2 border-slate-500 focus:border-purple-500 duration-300 ease-in-out placeholder-transparent"
         onChange={onchange}
       />

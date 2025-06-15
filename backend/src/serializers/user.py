@@ -4,8 +4,7 @@ from datetime import datetime
 class UserSignupSerializer(BaseModel):
     email: EmailStr
     password: str
-    created_date: datetime
-    updated_date : datetime
+    username: str
     
 class UserGetSerializer(BaseModel):
     email: EmailStr
